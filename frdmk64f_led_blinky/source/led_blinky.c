@@ -60,10 +60,31 @@ int main(void)
         }
     }
 
+    // Set the left motor to move in one direction
+    GPIO_PortSet(BOARD_CTRL_DIR_ML_1_GPIO, 1u << BOARD_CTRL_DIR_ML_1_PIN);
+    GPIO_PortClear(BOARD_CTRL_DIR_ML_2_GPIO, 1u << BOARD_CTRL_DIR_ML_2_PIN);
+
+    // Set the right motor to move in one direction
+    GPIO_PortClear(BOARD_CTRL_DIR_MR_1_GPIO, 1u << BOARD_CTRL_DIR_MR_1_PIN);
+    GPIO_PortSet(BOARD_CTRL_DIR_MR_2_GPIO, 1u << BOARD_CTRL_DIR_MR_2_PIN);
+
+    // Set speed of both motors to highest speed possible
+    GPIO_PortSet(BOARD_CTRL_PWR_ML_GPIO, 1u << BOARD_CTRL_PWR_ML_PIN);
+    GPIO_PortSet(BOARD_CTRL_PWR_MR_GPIO, 1u << BOARD_CTRL_PWR_MR_PIN);
+
     while (1)
     {
         /* Delay 1000 ms */
-        SysTick_DelayTicks(1000U);
+        SysTick_DelayTicks(3000U);
         GPIO_PortToggle(BOARD_LED_GPIO, 1u << BOARD_LED_GPIO_PIN);
+
+        // Change direction of vehicle
+        GPIO_PortToggle(BOARD_CTRL_DIR_ML_1_GPIO, 1u << BOARD_CTRL_DIR_ML_1_PIN);
+        GPIO_PortToggle(BOARD_CTRL_DIR_ML_2_GPIO, 1u << BOARD_CTRL_DIR_ML_2_PIN);
+
+        GPIO_PortToggle(BOARD_CTRL_DIR_MR_1_GPIO, 1u << BOARD_CTRL_DIR_MR_1_PIN);
+        GPIO_PortToggle(BOARD_CTRL_DIR_MR_2_GPIO, 1u << BOARD_CTRL_DIR_MR_2_PIN);
+
+
     }
 }
