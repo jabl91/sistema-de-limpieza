@@ -32,10 +32,13 @@
 #define DEMO_UART_RX_TX_IRQn UART3_RX_TX_IRQn
 /* Task priorities. */
 #define uart_task_PRIORITY (configMAX_PRIORITIES - 1)
+#define motors_task_PRIORITY (configMAX_PRIORITIES - 2)
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
 static void uart_task(void *pvParameters);
+static void motors_task(void *pvParameters);
 
 /*******************************************************************************
  * Variables
@@ -75,10 +78,55 @@ int main(void)
         while (1)
             ;
     }
+    if (xTaskCreate(motors_task, "Motors_task", configMINIMAL_STACK_SIZE + 100, NULL, motors_task_PRIORITY, NULL) != pdPASS)
+    {
+        PRINTF("Task creation failed!.\r\n");
+        while (1)
+            ;
+    }
     vTaskStartScheduler();
     for (;;)
         ;
 }
+
+/*!
+ * @brief Task responsible for motors control.
+ */
+static void motors_task(void *pvParameters)
+{
+
+	TickType_t xLastWakeTime;
+
+    // Set the left motor to move in one direction
+    GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+    GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+    // Set the right motor to move in one direction
+    GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+    GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+
+    // Set speed of both motors to highest speed possible
+    GPIO_PortSet(BOARD_INITPINS_CTRL_PWR_ML_GPIO, 1u << BOARD_INITPINS_CTRL_PWR_ML_PIN);
+    GPIO_PortSet(BOARD_INITPINS_CTRL_PWR_MR_GPIO, 1u << BOARD_INITPINS_CTRL_PWR_MR_PIN);
+
+    xLastWakeTime = xTaskGetTickCount ();
+    while (1)
+    {
+        /* Delay 300 ticks == 600 * 5 ms == 3000 ms == 3 seconds */
+    	vTaskDelayUntil( &xLastWakeTime, 600U );
+
+        // Change direction of vehicle
+        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+
+    }
+
+    vTaskSuspend(NULL);
+}
+
 
 /*!
  * @brief Task responsible for loopback.
