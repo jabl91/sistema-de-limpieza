@@ -51,6 +51,8 @@ uint8_t recv_buffer[4];
 
 uart_rtos_handle_t handle;
 struct _uart_handle t_handle;
+volatile char directioncontrol = 0;
+
 
 uart_rtos_config_t uart_config = {
     .baudrate    = 9600,
@@ -173,6 +175,7 @@ static void uart_task(void *pvParameters)
         }
         if (n > 0)
         {
+        	directioncontrol = recv_buffer[3];
             /* send back the received data */
             UART_RTOS_Send(&handle, recv_buffer, n);
         }
