@@ -33,12 +33,14 @@
 /* Task priorities. */
 #define uart_task_PRIORITY (configMAX_PRIORITIES - 1)
 #define motors_task_PRIORITY (configMAX_PRIORITIES - 2)
+#define ultrasonic_task_PRIORITY (configMAX_PRIORITIES - 3)
 
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
 static void uart_task(void *pvParameters);
 static void motors_task(void *pvParameters);
+static void ultrasonic_task(void *pvParameters);
 
 /*******************************************************************************
  * Variables
@@ -77,14 +79,16 @@ int main(void)
     if (xTaskCreate(uart_task, "Uart_task", configMINIMAL_STACK_SIZE + 100, NULL, uart_task_PRIORITY, NULL) != pdPASS)
     {
         PRINTF("Task creation failed!.\r\n");
-        while (1)
-            ;
+        while (1);
     }
     if (xTaskCreate(motors_task, "Motors_task", configMINIMAL_STACK_SIZE + 100, NULL, motors_task_PRIORITY, NULL) != pdPASS)
     {
         PRINTF("Task creation failed!.\r\n");
-        while (1)
-            ;
+        while (1);
+    }
+    if (xTaskCreate(ultrasonic_task, "Ultrasonic_task", configMINIMAL_STACK_SIZE +100, NULL, ultrasonic_task_PRIORITY, NULL)!= pdPASS){
+    	PRINTF("Task creation failed !\r\n");
+    	while (1);
     }
     vTaskStartScheduler();
     for (;;)
@@ -157,6 +161,27 @@ static void motors_task(void *pvParameters)
     vTaskSuspend(NULL);
 }
 
+static void ultrasonic_task(void *pvParameters){
+	TickType_t xLastWakeTime;
+
+	GPIO_PortClear(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
+
+
+	xLastWakeTime = xTaskGetTickCount ();
+	while(1){
+		/* Delay 200 ticks == 200 * 5 ms == 1000 ms == 1 seconds */
+		vTaskDelayUntil( &xLastWakeTime, 200U );
+
+		GPIO_PortSet(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
+		for	(unsigned int x=0; x<120;x++) {
+
+		}
+		GPIO_PortClear(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
+	}
+
+
+
+}
 
 /*!
  * @brief Task responsible for loopback.
