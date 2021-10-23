@@ -117,13 +117,23 @@ static void motors_task(void *pvParameters)
         /* Delay 300 ticks == 600 * 5 ms == 3000 ms == 3 seconds */
     	vTaskDelayUntil( &xLastWakeTime, 600U );
 
-        // Change direction of vehicle
-        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
-        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+        if(directioncontrol == 119){
+			// Change direction of vehicle
+			GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+			GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
 
-        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
-        GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+			GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+			GPIO_PortToggle(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+        }
+        else{
+			// Set the left motor to move in one direction
+			GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+			GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
 
+			// Set the right motor to move in one direction
+			GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+			GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+        }
     }
 
     vTaskSuspend(NULL);
