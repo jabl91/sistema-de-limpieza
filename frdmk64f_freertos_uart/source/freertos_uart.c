@@ -26,10 +26,10 @@
  * Definitions
  ******************************************************************************/
 /* UART instance and clock */
-#define DEMO_UART            UART0
-#define DEMO_UART_CLKSRC     UART0_CLK_SRC
-#define DEMO_UART_CLK_FREQ   CLOCK_GetFreq(UART0_CLK_SRC)
-#define DEMO_UART_RX_TX_IRQn UART0_RX_TX_IRQn
+#define DEMO_UART            UART3
+#define DEMO_UART_CLKSRC     UART3_CLK_SRC
+#define DEMO_UART_CLK_FREQ   CLOCK_GetFreq(UART3_CLK_SRC)
+#define DEMO_UART_RX_TX_IRQn UART3_RX_TX_IRQn
 /* Task priorities. */
 #define uart_task_PRIORITY (configMAX_PRIORITIES - 1)
 /*******************************************************************************
@@ -50,7 +50,7 @@ uart_rtos_handle_t handle;
 struct _uart_handle t_handle;
 
 uart_rtos_config_t uart_config = {
-    .baudrate    = 115200,
+    .baudrate    = 9600,
     .parity      = kUART_ParityDisabled,
     .stopbits    = kUART_OneStopBit,
     .buffer      = background_buffer,
