@@ -199,8 +199,8 @@ static void motors_task(void *pvParameters)
 
     while (1)
     {
-        /* Delay 300 ticks == 600 * 5 ms == 3000 ms == 3 seconds */
-    	vTaskDelayUntil( &xLastWakeTime, 600U );
+        /* Delay 40 ticks == 40 * 5 ms == 200 ms == 0.2 seconds */
+    	vTaskDelayUntil( &xLastWakeTime, 40U );
 
     	if(directioncontrol==109) { // 109 = m
     		currentmode=1;
@@ -271,7 +271,17 @@ static void motors_task(void *pvParameters)
 			}
     	}
     	else{
-    		if(ultrasonicMeasuredDistance >12000){
+    		if(ultrasonicMeasuredDistance < 8000){
+				// LEFT turn Direction
+				// Set the left motor to move in one direction
+				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+				// Set the right motor to move in one direction
+				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+    		}
+    		else if(ultrasonicMeasuredDistance > 12000){
 				// Forward Direction
 				// Set the left motor to move in one direction
 				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
@@ -281,16 +291,10 @@ static void motors_task(void *pvParameters)
 				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
 				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
 
-    		}else{
-				// LEFT turn Direction
-				// Set the left motor to move in one direction
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
-				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
-
-				// Set the right motor to move in one direction
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
-				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
-
+    		}
+    		else
+    		{
+    			// do nothing :)
     		}
     	}
 
@@ -308,8 +312,8 @@ static void ultrasonic_task(void *pvParameters){
 
 	xLastWakeTime = xTaskGetTickCount ();
 	while(1){
-		/* Delay 200 ticks == 200 * 5 ms == 1000 ms == 1 seconds */
-		vTaskDelayUntil( &xLastWakeTime, 200U );
+		/* Delay 20 ticks == 20 * 5 ms == 100 ms == 0.1 seconds */
+		vTaskDelayUntil( &xLastWakeTime, 20U );
 
 		GPIO_PortSet(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
 		for	(unsigned int x=0; x<120;x++) {
