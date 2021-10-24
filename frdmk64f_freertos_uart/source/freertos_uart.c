@@ -179,6 +179,7 @@ int main(void)
  */
 static void motors_task(void *pvParameters)
 {
+	static unsigned char currentmode=0; //0 Automatic -- 1 Manual
 
 	TickType_t xLastWakeTime;
 
@@ -195,45 +196,93 @@ static void motors_task(void *pvParameters)
     GPIO_PortSet(BOARD_INITPINS_CTRL_PWR_MR_GPIO, 1u << BOARD_INITPINS_CTRL_PWR_MR_PIN);
 
     xLastWakeTime = xTaskGetTickCount ();
+
     while (1)
     {
         /* Delay 300 ticks == 600 * 5 ms == 3000 ms == 3 seconds */
     	vTaskDelayUntil( &xLastWakeTime, 600U );
 
-    	switch(directioncontrol){
-    	    case 119: //119==ASCCI w
-    	    	// Forward Direction
-				// Set the left motor to move in one direction
-				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+    	if(directioncontrol==109) { // 109 = m
+    		currentmode=1;
+    	}else if(directioncontrol == 110){ //110 = n
+    		currentmode=0;
+    		directioncontrol = 0;
+    	}else if(currentmode==1){
 
-				// Set the right motor to move in one direction
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
-				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+			switch(directioncontrol){
+				case 119: //119==ASCCI w
+					// Forward Direction
+					// Set the left motor to move in one direction
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
 
-			break;
-    	    case 115: //115 ==ASCCI s
-    	    	// Reverse Direction
-				// Set the left motor to move in one direction
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
-				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+					// Set the right motor to move in one direction
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
 
-				// Set the right motor to move in one direction
-				GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
-    	    	break;
-    	    case 98:
-			default:
-				// Brake
-				// Set the left motor to move in one direction
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
-
-				// Set the right motor to move in one direction
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
-				GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
 				break;
-    		}
+				case 115: //115 ==ASCCI s
+					// Reverse Direction
+					// Set the left motor to move in one direction
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+					// Set the right motor to move in one direction
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+					break;
+				case 97: //ASCCi For a
+
+					// LEFT turn Direction
+					// Set the left motor to move in one direction
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+					// Set the right motor to move in one direction
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+
+					break;
+
+			   case 100: //>ASCCi for d
+					// Right Turn Direction
+					// Set the left motor to move in one direction
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+					// Set the right motor to move in one direction
+					GPIO_PortClear(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+
+
+				   break;
+
+				case 98: // ASCCI for b (break)
+				default:
+					// Brake
+					// Set the left motor to move in one direction
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+					// Set the right motor to move in one direction
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+					GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+					break;
+			}
+    	}
+    	else{
+			// Brake
+			// Set the left motor to move in one direction
+			GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_1_PIN);
+			GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_ML_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_ML_2_PIN);
+
+			// Set the right motor to move in one direction
+			GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_1_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_1_PIN);
+			GPIO_PortSet(BOARD_INITPINS_CTRL_DIR_MR_2_GPIO, 1u << BOARD_INITPINS_CTRL_DIR_MR_2_PIN);
+
+    	}
+
+
     }
 
 
