@@ -335,7 +335,7 @@ void FTM_GetDefaultConfig(ftm_config_t *config)
     (void)memset(config, 0, sizeof(*config));
 
     /* Divide FTM clock by 1 */
-    config->prescale = kFTM_Prescale_Divide_1;
+    config->prescale = kFTM_Prescale_Divide_8;
     /* FTM behavior in BDM mode */
     config->bdmMode = kFTM_BdmMode_0;
     /* Software trigger will be used to update registers */
