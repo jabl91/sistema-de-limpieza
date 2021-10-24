@@ -14,9 +14,11 @@ mcu_data: ksdk2_0
 processor_version: 9.0.0
 board: FRDM-K64F
 pin_labels:
+- {pin_num: '90', pin_signal: PTC16/UART3_RX/ENET0_1588_TMR0/FB_CS5_b/FB_TSIZ1/FB_BE23_16_BLS15_8_b, label: 'J1[2]', identifier: TMR_1588_0;SNS_TRIGGER}
 - {pin_num: '69', pin_signal: PTB23/SPI2_SIN/SPI0_PCS5/FB_AD28, label: 'J1[10]', identifier: CTRL_PWR_MR}
 - {pin_num: '72', pin_signal: ADC0_SE4b/CMP1_IN0/PTC2/SPI0_PCS2/UART1_CTS_b/FTM0_CH1/FB_AD12/I2S0_TX_FS, label: 'J1[14]', identifier: CTRL_DIR_MR_2}
 - {pin_num: '73', pin_signal: CMP1_IN1/PTC3/LLWU_P7/SPI0_PCS1/UART1_RX/FTM0_CH2/CLKOUT/I2S0_TX_BCLK, label: 'J1[16]', identifier: CTRL_DIR_ML_2}
+- {pin_num: '71', pin_signal: ADC0_SE15/PTC1/LLWU_P6/SPI0_PCS3/UART1_RTS_b/FTM0_CH0/FB_AD13/I2S0_TXD0, label: 'J1[5]', identifier: SNS_TRIGGER;ECHO_DETECT}
 - {pin_num: '81', pin_signal: ADC1_SE5b/CMP0_IN3/PTC9/FTM3_CH5/I2S0_RX_BCLK/FB_AD6/FTM2_FLT0, label: 'J1[9]', identifier: CTRL_PWR_ML}
 - {pin_num: '77', pin_signal: PTC5/LLWU_P9/SPI0_SCK/LPTMR0_ALT2/I2S0_RXD0/FB_AD10/CMP0_OUT/FTM0_CH2, label: 'J1[15]', identifier: CTRL_DIR_ML_1}
 - {pin_num: '79', pin_signal: CMP0_IN1/PTC7/SPI0_SIN/USB_SOF_OUT/I2S0_RX_FS/FB_AD8, label: 'J1[13]', identifier: CTRL_DIR_MR_1}
@@ -54,6 +56,10 @@ BOARD_InitPins:
   - {pin_num: '81', peripheral: GPIOC, signal: 'GPIO, 9', pin_signal: ADC1_SE5b/CMP0_IN3/PTC9/FTM3_CH5/I2S0_RX_BCLK/FB_AD6/FTM2_FLT0, direction: OUTPUT}
   - {pin_num: '77', peripheral: GPIOC, signal: 'GPIO, 5', pin_signal: PTC5/LLWU_P9/SPI0_SCK/LPTMR0_ALT2/I2S0_RXD0/FB_AD10/CMP0_OUT/FTM0_CH2, direction: OUTPUT}
   - {pin_num: '79', peripheral: GPIOC, signal: 'GPIO, 7', pin_signal: CMP0_IN1/PTC7/SPI0_SIN/USB_SOF_OUT/I2S0_RX_FS/FB_AD8, direction: OUTPUT}
+  - {pin_num: '90', peripheral: GPIOC, signal: 'GPIO, 16', pin_signal: PTC16/UART3_RX/ENET0_1588_TMR0/FB_CS5_b/FB_TSIZ1/FB_BE23_16_BLS15_8_b, identifier: SNS_TRIGGER,
+    direction: OUTPUT}
+  - {pin_num: '71', peripheral: FTM0, signal: 'CH, 0', pin_signal: ADC0_SE15/PTC1/LLWU_P6/SPI0_PCS3/UART1_RTS_b/FTM0_CH0/FB_AD13/I2S0_TXD0, identifier: ECHO_DETECT,
+    direction: INPUT}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS ***********
  */
 /* clang-format on */
@@ -113,6 +119,13 @@ void BOARD_InitPins(void)
     /* Initialize GPIO functionality on pin PTC9 (pin 81)  */
     GPIO_PinInit(BOARD_INITPINS_CTRL_PWR_ML_GPIO, BOARD_INITPINS_CTRL_PWR_ML_PIN, &CTRL_PWR_ML_config);
 
+    gpio_pin_config_t SNS_TRIGGER_config = {
+        .pinDirection = kGPIO_DigitalOutput,
+        .outputLogic = 0U
+    };
+    /* Initialize GPIO functionality on pin PTC16 (pin 90)  */
+    GPIO_PinInit(BOARD_INITPINS_SNS_TRIGGER_GPIO, BOARD_INITPINS_SNS_TRIGGER_PIN, &SNS_TRIGGER_config);
+
     /* PORTB10 (pin 58) is configured as UART3_RX */
     PORT_SetPinMux(PORTB, 10U, kPORT_MuxAlt3);
 
@@ -121,6 +134,12 @@ void BOARD_InitPins(void)
 
     /* PORTB23 (pin 69) is configured as PTB23 */
     PORT_SetPinMux(BOARD_INITPINS_CTRL_PWR_MR_PORT, BOARD_INITPINS_CTRL_PWR_MR_PIN, kPORT_MuxAsGpio);
+
+    /* PORTC1 (pin 71) is configured as FTM0_CH0 */
+    PORT_SetPinMux(BOARD_INITPINS_ECHO_DETECT_PORT, BOARD_INITPINS_ECHO_DETECT_PIN, kPORT_MuxAlt4);
+
+    /* PORTC16 (pin 90) is configured as PTC16 */
+    PORT_SetPinMux(BOARD_INITPINS_SNS_TRIGGER_PORT, BOARD_INITPINS_SNS_TRIGGER_PIN, kPORT_MuxAsGpio);
 
     /* PORTC2 (pin 72) is configured as PTC2 */
     PORT_SetPinMux(BOARD_INITPINS_CTRL_DIR_MR_2_PORT, BOARD_INITPINS_CTRL_DIR_MR_2_PIN, kPORT_MuxAsGpio);

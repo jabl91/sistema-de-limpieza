@@ -18,6 +18,7 @@
 #include "pin_mux.h"
 #include "clock_config.h"
 #include "board.h"
+#include "fsl_ftm.h"
 
 #include "fsl_uart_freertos.h"
 #include "fsl_uart.h"
@@ -33,12 +34,30 @@
 /* Task priorities. */
 #define uart_task_PRIORITY (configMAX_PRIORITIES - 1)
 #define motors_task_PRIORITY (configMAX_PRIORITIES - 2)
+#define ultrasonic_task_PRIORITY (configMAX_PRIORITIES - 3)
+
+#define BOARD_FTM_BASEADDR FTM0
+
+/* FTM channel used for input capture */
+#define BOARD_FTM_INPUT_CAPTURE_CHANNEL kFTM_Chnl_0
+
+/* Interrupt number and interrupt handler for the FTM base address used */
+#define FTM_INTERRUPT_NUMBER      FTM0_IRQn
+#define FTM_INPUT_CAPTURE_HANDLER FTM0_IRQHandler
+
+/* Interrupt to enable and flag to read */
+#define FTM_CHANNEL_INTERRUPT_ENABLE kFTM_Chnl0InterruptEnable
+#define FTM_CHANNEL_FLAG             kFTM_Chnl0Flag
+
+/* Get source clock for FTM driver */
+#define FTM_SOURCE_CLOCK CLOCK_GetFreq(kCLOCK_BusClk)
 
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
 static void uart_task(void *pvParameters);
 static void motors_task(void *pvParameters);
+static void ultrasonic_task(void *pvParameters);
 
 /*******************************************************************************
  * Variables
@@ -62,29 +81,93 @@ uart_rtos_config_t uart_config = {
     .buffer_size = sizeof(background_buffer),
 };
 
+volatile bool ftmIsrFlag = false;
+volatile unsigned short ultrasonicMeasuredDistance = 0U;
+
+
 /*******************************************************************************
  * Code
  ******************************************************************************/
+void FTM_INPUT_CAPTURE_HANDLER(void)
+{
+	static unsigned char waitingForEdge = 0U; // 0U Waiting for Rise Edge
+											  // 1U Waiting for Falling Edge
+
+	static unsigned short lastTimerValue = 0U;
+    if ((FTM_GetStatusFlags(BOARD_FTM_BASEADDR) & FTM_CHANNEL_FLAG) == FTM_CHANNEL_FLAG)
+    {
+    	if(0U == waitingForEdge) // If True, current detected edge is a rising edge
+    	{
+    		lastTimerValue = FTM_GetCurrentTimerCount(BOARD_FTM_BASEADDR);
+    		FTM_SetupInputCapture(BOARD_FTM_BASEADDR, BOARD_FTM_INPUT_CAPTURE_CHANNEL, kFTM_FallingEdge, 0);
+    		waitingForEdge = 1U;
+    	}
+    	else if(1U == waitingForEdge) // If True, current detected edge is a falling edge
+    	{
+    		ultrasonicMeasuredDistance = FTM_GetCurrentTimerCount(BOARD_FTM_BASEADDR) - lastTimerValue;
+    		FTM_SetupInputCapture(BOARD_FTM_BASEADDR, BOARD_FTM_INPUT_CAPTURE_CHANNEL, kFTM_RisingEdge, 0);
+    		waitingForEdge = 0U;
+    		lastTimerValue = 0U;
+    	}
+    	else
+    	{
+    		FTM_SetupInputCapture(BOARD_FTM_BASEADDR, BOARD_FTM_INPUT_CAPTURE_CHANNEL, kFTM_RisingEdge, 0);
+    		waitingForEdge = 0U;
+    		lastTimerValue = 0U;
+    	}
+
+        /* Clear interrupt flag.*/
+        FTM_ClearStatusFlags(BOARD_FTM_BASEADDR, FTM_CHANNEL_FLAG);
+    }
+    ftmIsrFlag = true;
+    __DSB();
+}
+
 /*!
  * @brief Application entry point.
  */
 int main(void)
 {
+    ftm_config_t ftmInfo;
+    uint32_t captureVal;
+
     /* Init board hardware. */
     BOARD_InitBootPins();
     BOARD_InitBootClocks();
     NVIC_SetPriority(DEMO_UART_RX_TX_IRQn, 5);
+
+    FTM_GetDefaultConfig(&ftmInfo);
+    /* Initialize FTM module */
+    FTM_Init(BOARD_FTM_BASEADDR, &ftmInfo);
+
+    /* Setup dual-edge capture on a FTM channel pair */
+    FTM_SetupInputCapture(BOARD_FTM_BASEADDR, BOARD_FTM_INPUT_CAPTURE_CHANNEL, kFTM_RisingEdge, 0);
+
+    /* Set the timer to be in free-running mode */
+    BOARD_FTM_BASEADDR->MOD = 0xFFFF;
+
+    /* Enable channel interrupt when the second edge is detected */
+    FTM_EnableInterrupts(BOARD_FTM_BASEADDR, FTM_CHANNEL_INTERRUPT_ENABLE);
+
+    /* Enable at the NVIC */
+    EnableIRQ(FTM_INTERRUPT_NUMBER);
+
+    FTM_StartTimer(BOARD_FTM_BASEADDR, kFTM_SystemClock);
+
+
     if (xTaskCreate(uart_task, "Uart_task", configMINIMAL_STACK_SIZE + 100, NULL, uart_task_PRIORITY, NULL) != pdPASS)
     {
         PRINTF("Task creation failed!.\r\n");
-        while (1)
-            ;
+        while (1);
     }
     if (xTaskCreate(motors_task, "Motors_task", configMINIMAL_STACK_SIZE + 100, NULL, motors_task_PRIORITY, NULL) != pdPASS)
     {
         PRINTF("Task creation failed!.\r\n");
-        while (1)
-            ;
+        while (1);
+    }
+    if (xTaskCreate(ultrasonic_task, "Ultrasonic_task", configMINIMAL_STACK_SIZE +100, NULL, ultrasonic_task_PRIORITY, NULL)!= pdPASS){
+    	PRINTF("Task creation failed !\r\n");
+    	while (1);
     }
     vTaskStartScheduler();
     for (;;)
@@ -157,6 +240,27 @@ static void motors_task(void *pvParameters)
     vTaskSuspend(NULL);
 }
 
+static void ultrasonic_task(void *pvParameters){
+	TickType_t xLastWakeTime;
+
+	GPIO_PortClear(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
+
+
+	xLastWakeTime = xTaskGetTickCount ();
+	while(1){
+		/* Delay 200 ticks == 200 * 5 ms == 1000 ms == 1 seconds */
+		vTaskDelayUntil( &xLastWakeTime, 200U );
+
+		GPIO_PortSet(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
+		for	(unsigned int x=0; x<120;x++) {
+
+		}
+		GPIO_PortClear(BOARD_INITPINS_SNS_TRIGGER_GPIO, 1u << BOARD_INITPINS_SNS_TRIGGER_PIN);
+	}
+
+
+
+}
 
 /*!
  * @brief Task responsible for loopback.
